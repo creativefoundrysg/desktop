@@ -27,7 +27,6 @@ import {
   terminateDesktopNotifications,
 } from './notifications'
 import { addTrustedIPCSender } from './trusted-ipc-sender'
-import { getUpdaterGUID } from '../lib/get-updater-guid'
 import { CLIAction } from '../lib/cli-action'
 
 export class AppWindow {
@@ -402,58 +401,13 @@ export class AppWindow {
     this.window.destroy()
   }
 
-  public setupAutoUpdater() {
-    autoUpdater.on('error', (error: Error) => {
-      this.isDownloadingUpdate = false
-      ipcWebContents.send(this.window.webContents, 'auto-updater-error', error)
-    })
-
-    autoUpdater.on('checking-for-update', () => {
-      this.isDownloadingUpdate = false
-      ipcWebContents.send(
-        this.window.webContents,
-        'auto-updater-checking-for-update'
-      )
-    })
-
-    autoUpdater.on('update-available', () => {
-      this.isDownloadingUpdate = true
-      ipcWebContents.send(
-        this.window.webContents,
-        'auto-updater-update-available'
-      )
-    })
-
-    autoUpdater.on('update-not-available', () => {
-      this.isDownloadingUpdate = false
-      ipcWebContents.send(
-        this.window.webContents,
-        'auto-updater-update-not-available'
-      )
-    })
-
-    autoUpdater.on('update-downloaded', () => {
-      this.isDownloadingUpdate = false
-      ipcWebContents.send(
-        this.window.webContents,
-        'auto-updater-update-downloaded'
-      )
-    })
-  }
+  public setupAutoUpdater() {}
 
   public async checkForUpdates(url: string) {
-    try {
-      autoUpdater.setFeedURL({ url: await trySetUpdaterGuid(url) })
-      autoUpdater.checkForUpdates()
-    } catch (e) {
-      return e
-    }
     return undefined
   }
 
-  public quitAndInstallUpdate() {
-    autoUpdater.quitAndInstall()
-  }
+  public quitAndInstallUpdate() {}
 
   public minimizeWindow() {
     this.window.minimize()
@@ -504,20 +458,5 @@ export class AppWindow {
   public async showOpenDialog(options: Electron.OpenDialogOptions) {
     const { filePaths } = await dialog.showOpenDialog(this.window, options)
     return filePaths.length > 0 ? filePaths[0] : null
-  }
-}
-
-const trySetUpdaterGuid = async (url: string) => {
-  try {
-    const id = await getUpdaterGUID()
-    if (!id) {
-      return url
-    }
-
-    const parsed = new URL(url)
-    parsed.searchParams.set('guid', id)
-    return parsed.toString()
-  } catch (e) {
-    return url
   }
 }
