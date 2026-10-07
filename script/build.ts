@@ -232,13 +232,19 @@ async function packageApp() {
         hardenedRuntime: true,
         entitlements: entitlementsPath,
       }),
-      type: isPublishableBuild ? 'distribution' : 'development',
+      // Outside of CI we don't have access to the signing identities used for
+      // distribution, so we always sign ad-hoc locally with '-' and skip
+      // identity validation.
+      type:
+        isPublishableBuild && isGitHubActions()
+          ? 'distribution'
+          : 'development',
       // For development, we will use '-' as the identifier so that codesign
       // will sign the app to run locally. We need to disable 'identity-validation'
       // or otherwise it will replace '-' with one of the regular codesigning
       // identities in our system.
-      identity: isDevelopmentBuild ? '-' : undefined,
-      identityValidation: !isDevelopmentBuild,
+      identity: isDevelopmentBuild || !isGitHubActions() ? '-' : undefined,
+      identityValidation: isGitHubActions() && !isDevelopmentBuild,
     },
     osxNotarize,
     protocols: [
